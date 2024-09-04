@@ -9,7 +9,7 @@ All the tutorials are now presented as sphinx style documentation at:
 
 If you have a question about a tutorial, post in https://dev-discuss.pytorch.org/ rather than creating an issue in this repo. Your question will be answered much faster on the dev-discuss forum.
 
-# Submitting an issue
+# Submitting issues
 
 You can submit the following types of issues:
 
