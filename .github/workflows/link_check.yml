@@ -1,6 +1,10 @@
 name: link_check
 
 on:
+  pull_request:
+  push:
+    branches:
+      - main
   repository_dispatch:
   workflow_dispatch:
   schedule:
