@@ -1,4 +1,4 @@
-# PyTorch Tutorial Submission Policy
+# PyTorch Tutorial Submission Policies
 
 This policy outlines the criteria and process for submitting new
 tutorials to the PyTorch community.
