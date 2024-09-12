@@ -1,0 +1,23 @@
+name: "Mark Stale Pull Requests"
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Runs every day at midnight
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Mark stale pull requests
+        uses: actions/stale@v4
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-pr-message: 'Looks like this PR has not been updated in a while so we are going to mark it as `Stale`. <br>  `Stale` pull requests will automatically be closed after 30 days of inactivity. Feel free to remove the `Stale` label if you feel this was a mistake.'
+          days-before-stale: 1
+          days-before-close: 2
+          operations-per-run: 30
+         
