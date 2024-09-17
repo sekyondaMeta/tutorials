@@ -21,7 +21,7 @@ on:
 jobs:
   stale:
     if: ${{ github.repository == 'sekyondaMeta/tutorials' }}
-    runs-on: linux.large
+    runs-on: ubuntu-latest #linux.large
     permissions:
       contents: read
       pull-requests: write
