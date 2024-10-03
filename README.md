@@ -63,6 +63,9 @@ The `GALLERY_PATTERN` variable respects regular expressions.
 PyTorch Repo [README.md](https://github.com/pytorch/pytorch/blob/master/README.md) file.
 * Additional information can be found in [PyTorch CONTRIBUTING.md](https://github.com/pytorch/pytorch/blob/master/CONTRIBUTING.md).
 
+https://eng.uber.com/deep-neuroevolution/ 
+
+
 
 ## License
 
