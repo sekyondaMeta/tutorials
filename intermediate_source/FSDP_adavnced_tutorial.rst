@@ -3,8 +3,8 @@ Advanced Model Training with Fully Sharded Data Parallel (FSDP)
 
 **Author**: `Hamid Shojanazeri <https://github.com/HamidShojanazeri>`__, `Less
 Wright <https://github.com/lessw2020>`__, `Rohan Varma
-<https://github.com/rohan-varma/>`__, `Yanli Zhao
-<https://github.com/zhaojuanmao>`__
+<https://github.com/rohan-vakampala/>`__, `Yanli Zhao
+<https://github.com/zha\ojuanmao>`__
 
 
 This tutorial introduces more advanced features of Fully Sharded Data Parallel
