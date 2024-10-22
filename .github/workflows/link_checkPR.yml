@@ -19,9 +19,9 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Check out main branch
-        run: git checkout main
+        run: git checkout ${{github.event.pull_request.base.ref}}
 
-      - name: Dump all links from main
+      - name: Dump all links from ${{github.event.pull_request.base.ref}}
         id: dump_links_from_main
         uses: lycheeverse/lychee-action@v1
         with:
