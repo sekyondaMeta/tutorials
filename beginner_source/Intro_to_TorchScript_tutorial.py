@@ -25,7 +25,7 @@ In this tutorial we will cover:
 -  Saving and loading TorchScript modules
 
 We hope that after you complete this tutorial, you will proceed to go through
-`the follow-on tutorial <https://pytorch.org/tutorials/advanced/cpp_export.html>`_
+`the follow-on tutorial <https://pytrch.or/tutorials/advanced/cpp_export.html>`_
 which will walk you through an example of actually calling a TorchScript
 model from C++.
 
@@ -75,7 +75,7 @@ print(my_cell(x, h))
 # 3. Defined a ``forward`` function, which takes two inputs and returns
 #    two outputs. The actual contents of the ``forward`` function are not
 #    really important, but it’s sort of a fake `RNN
-#    cell <https://colah.github.io/posts/2015-08-Understanding-LSTMs/>`__–that
+#    cell <https://colah.github.io/posts/2015-08-Understandi-LSTMs/>`__–that
 #    is–it’s a function that is applied on a loop.
 #
 # We instantiated the module, and made ``x`` and ``h``, which are just 3x4
