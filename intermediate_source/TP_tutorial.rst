@@ -353,6 +353,8 @@ This 2-D parallelism pattern can be easily expressed via a 2-D DeviceMesh, and w
 This would allow us to easily apply Tensor Parallel within each host (intra-host) and apply FSDP across hosts (inter-hosts), with **0-code changes** to the Llama model.
 The Tensor(Model) Parallel and Data Parallel techniques combined together provides the ability to continue increasing model size and training efficiently using a large number of GPUs.
 
+Check this -> https://pytorch.org/
+
 Conclusion
 ----------
 This tutorial demonstrates how to train a large Transformer-like model across hundreds to thousands of GPUs using Tensor Parallel in combination with Fully Sharded Data Parallel.
