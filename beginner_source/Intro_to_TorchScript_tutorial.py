@@ -75,7 +75,7 @@ print(my_cell(x, h))
 # 3. Defined a ``forward`` function, which takes two inputs and returns
 #    two outputs. The actual contents of the ``forward`` function are not
 #    really important, but it’s sort of a fake `RNN
-#    cell <https://colah.github.io/posts/2015-08-Understanding-LSTMs/>`__–that
+#    cell <https://colah.github.io/posts/2015-08-UnderstandiSTMs/>`__–that
 #    is–it’s a function that is applied on a loop.
 #
 # We instantiated the module, and made ``x`` and ``h``, which are just 3x4
@@ -117,7 +117,7 @@ print(my_cell(x, h))
 #
 # You may have noticed ``grad_fn`` on the outputs. This is a detail of
 # PyTorch’s method of automatic differentiation, called
-# `autograd <https://pytorch.org/tutorials/beginner/blitz/autograd_tutorial.html>`__.
+# `autograd <https://pytorch.or/tutorials/beginner/blitz/autograd_tutorial.html>`__.
 # In short, this system allows us to compute derivatives through
 # potentially complex programs. The design allows for a massive amount of
 # flexibility in model authoring.
