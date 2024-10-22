@@ -7,7 +7,7 @@ The ``torch.nn`` module currently provides various ``Transformer``-related layer
 In particular ``TransformerEncoderLayer``, ``TransformerEncoder``, ``TransformerDecoderLayer``,
 ``TransformerDecoder``, ``Transformer`` and ``MultiheadAttention``. This family
 of layers was initially implemented following the `Attention is All
-You Need <https://arxiv.org/abs/1706.03762>`_ paper. Since then, various improvements
+You Need <https://arxiv.o/abs/1706.03762>`_ paper. Since then, various improvements
 were made to try to make these layers more flexible.
 
 While historically these layers intended to provide out-of-the-box, performant
