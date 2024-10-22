@@ -666,11 +666,12 @@ Welcome to PyTorch Tutorials
 
 .. Parallel-and-Distributed-Training
 
-
-
 .. customcarditem::
-   :header: PyTorch Distributed Overview
-   :card_description: Briefly go over all concepts and features in the distributed package. Use this document to find the distributed training technology that can best serve your application.
+   :header: [Title TBD] Unbundling nn.Transformer modules for gains and profits
+   :card_description: This tutorial goes over recommended best practices for implementing Transformers.
+   :image: _static/img/thumbnails/cropped/pytorch-logo.png
+   :link: intermediate/transformer_building_blocks.html
+   :tags: Transformer
    :image: _static/img/thumbnails/cropped/PyTorch-Distributed-Overview.png
    :link: beginner/dist_overview.html
    :tags: Parallel-and-Distributed-Training
