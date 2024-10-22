@@ -22,3 +22,10 @@ jobs:
           args: --accept=200,403,429 --base . --verbose --no-progress ${{ steps.changed-files.outputs.all_changed_files }}
           token: ${{ secrets.CUSTOM_TOKEN }}
           fail: true
+      - name: Suggestions
+        if: failure()
+        run: |
+          echo -e "\nPlease review the links reported in the Check links step above."
+          echo -e "If a link is valid but fails due to a CAPTCHA challenge, IP blocking, login requirements, etc.,
+          consider adding such links to .lycheeignore file to bypass future checks.\n"
+          exit 1
