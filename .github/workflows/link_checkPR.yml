@@ -31,6 +31,12 @@ jobs:
             });
             return labels.data.some(label => label.name === 'duplicate');
 
+      - name: Skip Check
+        if: steps.skip-label.outputs.result == 'true'
+        run: |
+          echo -e "\nduplicate label ditacted, Link check skipped "
+          exit 0
+          
       - name: Check Links
         if: steps.skip-label.outputs.result == 'false'
         uses: lycheeverse/lychee-action@v1
