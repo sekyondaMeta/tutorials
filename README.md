@@ -3,7 +3,7 @@
 
 All the tutorials are now presented as sphinx style documentation at:
 
-## [https://pytorch.org/tutorials](https://pytorch.org/tutorials)
+## [https://pytorch.org/tutorials](https://pytorch.org/tutorial)
 
 # Asking a question
 
