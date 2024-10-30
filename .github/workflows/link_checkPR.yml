@@ -29,7 +29,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: context.issue.number
             });
-            return labels.data.some(label => label.name === 'skip-check');
+            return labels.data.some(label => label.name === 'duplicate');
 
       - name: Check Links
         if: steps.skip-label.outputs.result == 'false'
