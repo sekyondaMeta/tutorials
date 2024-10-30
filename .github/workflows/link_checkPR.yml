@@ -30,12 +30,6 @@ jobs:
               issue_number: context.issue.number
             });
             return labels.data.some(label => label.name === 'duplicate');
-
-      - name: Skip Check
-        if: steps.skip-label.outputs.result == 'true'
-        run: |
-          echo -e "\nduplicate label ditacted, Link check skipped "
-          exit 0
           
       - name: Check Links
         if: steps.skip-label.outputs.result == 'false'
@@ -44,7 +38,11 @@ jobs:
           args: --accept=200,403,429 --base . --verbose --no-progress ${{ steps.changed-files.outputs.all_changed_files }}
           token: ${{ secrets.CUSTOM_TOKEN }}
           fail: true
-
+          
+      - name: Skip Message
+        if: steps.skip-label.outputs.result == 'true'
+        run: echo "Link check was skipped due to the presence of the 'duplicate' label."
+        
       - name: Suggestions
         if: failure()
         run: |
