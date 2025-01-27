@@ -36,7 +36,7 @@ jobs:
         if: steps.skip-label.outputs.result == 'false'
         uses: lycheeverse/lychee-action@v1
         with:
-          args: --accept=200,403,429 --base . --exclude '\.(pdf|zip|png|jpg)$' --verbose --no-progress ${{ steps.changed-files.outputs.all_changed_files }}
+          args: --exclude '\.(pdf|zip|png|jpg)$' --accept=200,403,429 --base . --verbose --no-progress ${{ steps.changed-files.outputs.all_changed_files }}
           token: ${{ secrets.CUSTOM_TOKEN }}
           fail: true
           
