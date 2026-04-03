@@ -54,6 +54,9 @@ jobs:
             });
             console.log(`Created new issue #${newIssue.number}`);
 
+            // Wait for GitHub to propagate the issue node before commenting
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
             // Step 2: Post @claude trigger as a separate comment
             // This separates untrusted data (issue body) from Claude's instructions (comment)
             const claudePrompt = [
