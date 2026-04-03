@@ -7,7 +7,7 @@ on:
 
 jobs:
   audit:
-    if: github.repository == 'pytorch/tutorials'
+    if: github.repository == 'sekyondaMeta/tutorials'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
