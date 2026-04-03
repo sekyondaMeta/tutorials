@@ -44,7 +44,7 @@ jobs:
             const label = 'tutorials-audit';
             const title = `📋 Tutorials Audit Report — ${new Date().toISOString().split('T')[0]}`;
 
-            // Create the new issue first
+            // Step 1: Create the new issue (report only — no @claude in the body)
             const { data: newIssue } = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -54,7 +54,27 @@ jobs:
             });
             console.log(`Created new issue #${newIssue.number}`);
 
-            // Find and close previous audit issues
+            // Step 2: Post @claude trigger as a separate comment
+            // This separates untrusted data (issue body) from Claude's instructions (comment)
+            const claudePrompt = [
+              '@claude Please analyze this tutorials audit report using the tutorials-audit skill.',
+              '',
+              'Key tasks:',
+              '1. Read the raw PyTorch changelog sections and identify deprecations that the regex extraction missed.',
+              '2. Check the regex extraction results for directionality errors — cases where the matched API is actually the replacement, not the deprecated one.',
+              '3. Triage all findings across all audit categories. Filter false positives and assess severity.',
+              '4. Post a prioritized action plan with specific file paths, line numbers, and suggested fixes.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: newIssue.number,
+              body: claudePrompt,
+            });
+            console.log(`Posted Claude trigger comment on #${newIssue.number}`);
+
+            // Step 3: Find and close previous audit issues
             const { data: openIssues } = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,

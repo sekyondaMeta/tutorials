@@ -2450,39 +2450,6 @@ def generate_report(
     lines.append("</details>")
     lines.append("")
 
-    # --- Claude trigger (collapsed) ---
-    issue_config = config.get("issue", {})
-    if issue_config.get("trigger_claude", False):
-        lines.append("<details>")
-        lines.append(
-            "<summary><strong>🤖 Claude Stage 2 Analysis Request</strong></summary>"
-        )
-        lines.append("")
-        lines.append(
-            "@claude Please analyze this tutorials audit report using the tutorials-audit skill."
-        )
-        lines.append("")
-        lines.append("Key tasks:")
-        lines.append(
-            "1. Read the raw PyTorch changelog sections and identify deprecations "
-            "that the regex extraction missed."
-        )
-        lines.append(
-            "2. Check the regex extraction results for directionality errors — "
-            "cases where the matched API is actually the replacement, not the deprecated one."
-        )
-        lines.append(
-            "3. Triage all findings across all audit categories. "
-            "Filter false positives and assess severity."
-        )
-        lines.append(
-            "4. Post a prioritized action plan with specific file paths, "
-            "line numbers, and suggested fixes."
-        )
-        lines.append("")
-        lines.append("</details>")
-        lines.append("")
-
     report = "\n".join(lines)
 
     # Final size check — GitHub issue body limit is 65,536 characters.

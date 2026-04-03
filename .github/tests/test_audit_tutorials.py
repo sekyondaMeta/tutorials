@@ -299,10 +299,10 @@ class TestGenerateReport:
         assert "torch.load issue" in report
         assert "Add weights_only" in report
 
-    def test_claude_trigger_included(self):
+    def test_claude_trigger_not_in_body(self):
         config = self._make_config(trigger_claude=True)
         report = aud.generate_report(config, [], "", {"has_previous": False})
-        assert "@claude" in report
+        assert "@claude" not in report
 
     def test_claude_trigger_excluded(self):
         config = self._make_config(trigger_claude=False)
