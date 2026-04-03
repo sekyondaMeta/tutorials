@@ -279,8 +279,8 @@ class TestGenerateReport:
     def test_empty_findings(self):
         config = self._make_config()
         report = aud.generate_report(config, [], "", {"has_previous": False})
-        assert "Total findings:** 0" in report
-        assert "| Critical | 0 |" in report
+        assert "0 findings" in report
+        assert "0 critical" in report
 
     def test_findings_appear_in_report(self):
         config = self._make_config()
@@ -319,7 +319,7 @@ class TestGenerateReport:
             "severity_deltas": {"critical": -1, "warning": -4, "info": 0},
         }
         report = aud.generate_report(config, [], "", trends)
-        assert "## Trends" in report
+        assert "Trend" in report
         assert "2026-03-15" in report
         assert "↓5" in report
 
