@@ -2289,61 +2289,60 @@ def generate_report(
                 lines.append(f"| {cat} | {_delta_str(delta)} |")
             lines.append("")
 
-    # Per-category sections — cap total report size to fit GitHub's 65,536 char issue body limit
-    GITHUB_ISSUE_BODY_LIMIT = (
-        64000  # Conservative limit (GitHub's actual limit is 65,536)
-    )
-    # Reserve space for header, summary, trends, changelog, metadata, and Claude trigger
-    RESERVED_CHARS = 15000
-    MAX_FINDINGS_CHARS = GITHUB_ISSUE_BODY_LIMIT - RESERVED_CHARS
+    # Per-category sections — compact grouped format to reduce repetition
+    # Priority order: security and staleness first, then other categories
+    CATEGORY_PRIORITY = {
+        "security_patterns": 0,
+        "staleness_check": 1,
+        "changelog_diff": 2,
+        "build_log_warnings": 3,
+        "orphaned_tutorials": 4,
+        "dependency_health": 5,
+        "template_compliance": 6,
+        "index_consistency": 7,
+        "build_health": 8,
+    }
 
     categories_seen: dict[str, list[Finding]] = {}
     for f in all_findings:
         categories_seen.setdefault(f.category, []).append(f)
 
-    # Sort findings within each category: critical first, then warning, then info
     SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
-    for cat in categories_seen:
-        categories_seen[cat].sort(key=lambda f: SEVERITY_ORDER.get(f.severity, 3))
+    sorted_categories = sorted(
+        categories_seen.items(),
+        key=lambda item: CATEGORY_PRIORITY.get(item[0], 99),
+    )
 
-    findings_lines: list[str] = []
-    findings_chars = 0
+    for category, findings in sorted_categories:
+        findings.sort(key=lambda f: SEVERITY_ORDER.get(f.severity, 3))
+        lines.append(f"## {category.replace('_', ' ').title()}")
+        lines.append("")
 
-    for category, findings in sorted(categories_seen.items()):
-        section_lines: list[str] = []
-        section_lines.append(f"## {category.replace('_', ' ').title()}")
-        section_lines.append("")
-        section_lines.append("| File | Line | Severity | Message | Suggestion |")
-        section_lines.append("|------|------|----------|---------|------------|")
-
-        omitted = 0
+        # Group findings by (severity, message, suggestion) to reduce repetition
+        groups: dict[tuple[str, str, str], list[tuple[str, int]]] = {}
         for f in findings:
             safe_message = sanitize_content(f.message)
-            safe_suggestion = sanitize_content(f.suggestion) if f.suggestion else "—"
-            row = f"| `{f.file}` | {f.line} | {f.severity} | {safe_message} | {safe_suggestion} |"
+            safe_suggestion = sanitize_content(f.suggestion) if f.suggestion else ""
+            key = (f.severity, safe_message, safe_suggestion)
+            groups.setdefault(key, []).append((f.file, f.line))
 
-            # Always include critical findings; truncate warning/info when over budget
-            if (
-                findings_chars + len(row) + 200 > MAX_FINDINGS_CHARS
-                and f.severity != "critical"
-            ):
-                omitted += 1
-                continue
-            section_lines.append(row)
-            findings_chars += len(row)
+        for (severity, message, suggestion), file_list in groups.items():
+            lines.append(f"**[{severity}]** {message}")
+            if suggestion:
+                lines.append(f"> 💡 {suggestion}")
+            lines.append("")
 
-        if omitted > 0:
-            section_lines.append(
-                f"| ... | ... | — | **+{omitted} additional findings omitted** (report size limit) "
-                f"| Run locally for full results: `python .github/scripts/audit_tutorials.py --skip-build-logs` |"
-            )
+            if len(file_list) <= 10:
+                for filepath, line_num in file_list:
+                    line_str = f":{line_num}" if line_num else ""
+                    lines.append(f"- `{filepath}{line_str}`")
+            else:
+                for filepath, line_num in file_list[:8]:
+                    line_str = f":{line_num}" if line_num else ""
+                    lines.append(f"- `{filepath}{line_str}`")
+                lines.append(f"- ... and **{len(file_list) - 8} more** files")
 
-        section_lines.append("")
-        findings_lines.extend(section_lines)
-
-    lines.extend(findings_lines)
-
-    lines.extend(findings_lines)
+            lines.append("")
 
     # Raw changelog text for Claude Stage 2 (Config C)
     if raw_changelog_text:
