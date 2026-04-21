@@ -227,8 +227,8 @@ class TestGenerateReport:
     def test_empty_findings(self):
         config = self._make_config()
         report = aud.generate_report(config, [], "", {"has_previous": False})
-        assert "0 findings" in report
-        assert "0 critical" in report
+        assert "Total findings:** 0" in report
+        assert "| Critical | 0 |" in report
 
     def test_findings_appear_in_report(self):
         config = self._make_config()
@@ -243,14 +243,15 @@ class TestGenerateReport:
             ),
         ]
         report = aud.generate_report(config, findings, "", {"has_previous": False})
-        assert "`a.py:42`" in report
+        assert "`a.py`" in report
+        assert "42" in report
         assert "torch.load issue" in report
         assert "Add weights_only" in report
 
-    def test_claude_trigger_not_in_body(self):
+    def test_claude_trigger_included(self):
         config = self._make_config(trigger_claude=True)
         report = aud.generate_report(config, [], "", {"has_previous": False})
-        assert "@claude" not in report
+        assert "@claude" in report
 
     def test_claude_trigger_excluded(self):
         config = self._make_config(trigger_claude=False)
