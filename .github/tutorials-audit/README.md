@@ -4,19 +4,13 @@ A config-driven auditing framework for PyTorch tutorial repositories. Runs as a 
 
 ## Overview
 
-The framework performs **10 audit passes** against tutorial content, producing a Markdown report as a GitHub issue. Each audit is independently toggleable via `config.yml`.
+The framework performs **3 audit passes** against tutorial content, producing a Markdown report as a GitHub issue. Each audit is independently toggleable via `config.yml`.
 
 | Audit | What It Catches | Data Source |
 |-------|-----------------|-------------|
 | **Build Log Warnings** | `DeprecationWarning`, `FutureWarning` from CI execution | GitHub Actions logs |
 | **Changelog Diff** | APIs deprecated/removed in recent PyTorch releases | PyTorch GitHub releases |
 | **Orphaned Tutorials** | Invisible tutorials, broken cards, stale NOT_RUN entries | Repo file analysis |
-| **Security Patterns** | `torch.load()` without `weights_only`, `eval()`, non-HTTPS URLs | AST + regex |
-| **Staleness Check** | Tutorials not verified in 6+ months, "needs update" status | `tutorials-review-data.json` |
-| **Dependency Health** | Imports missing from `requirements.txt`, dead dependencies | AST + `requirements.txt` |
-| **Template Compliance** | Missing author attribution, grid cards, conclusion section | Docstring analysis |
-| **Index Consistency** | Tag typos, missing thumbnails, redirect chains | `index.rst` + `redirects.py` |
-| **Build Health** | Missing metadata entries, shard imbalance, NOT_RUN growth | `metadata.json` |
 
 **Stage 2 (Claude):** If enabled, the issue body includes `@claude` which triggers Claude Code to triage findings, filter false positives, interpret changelog prose (Config C), and post a prioritized action plan.
 
@@ -27,11 +21,6 @@ The framework performs **10 audit passes** against tutorial content, producing a
 ```bash
 # All audits except those requiring GitHub API
 python .github/scripts/audit_tutorials.py --skip-build-logs --skip-changelog
-
-# Single audit only
-python .github/scripts/audit_tutorials.py --skip-build-logs --skip-changelog \
-  --skip-staleness --skip-orphans --skip-security --skip-dependencies \
-  --skip-templates --skip-index --skip-build-health
 
 # With GitHub API access (build logs + changelog)
 GITHUB_TOKEN=ghp_xxx python .github/scripts/audit_tutorials.py
@@ -51,7 +40,7 @@ The workflow creates a GitHub issue with the `tutorials-audit` label. Previous a
 | File | Purpose |
 |------|---------|
 | `.github/tutorials-audit/config.yml` | Repo-specific configuration — audit toggles, scan paths, thresholds |
-| `.github/scripts/audit_tutorials.py` | Main audit script — all passes, report generator, trend tracking |
+| `.github/scripts/audit_tutorials.py` | Main audit script — all passes and report generator |
 | `.github/workflows/tutorials-audit.yml` | GitHub Actions workflow — scheduled cron + manual dispatch |
 | `.claude/skills/tutorials-audit/SKILL.md` | Claude Stage 2 analysis skill with security guardrails |
 | `.github/tutorials-audit/README.md` | This file |
@@ -75,15 +64,9 @@ audits:                  # ← toggle what's relevant
   build_log_warnings: true
   changelog_diff: true
   orphaned_tutorials: true
-  security_patterns: true
-  staleness_check: true
-  dependency_health: true
-  template_compliance: true
-  index_consistency: true
-  build_health: true
 ```
 
-See the full `config.yml` for all settings including build log patterns, changelog sections, staleness thresholds, and issue creation options.
+See the full `config.yml` for all settings including build log patterns, changelog sections, and issue creation options.
 
 ## Adopting in Another PyTorch Repo
 
@@ -97,8 +80,7 @@ See the full `config.yml` for all settings including build log patterns, changel
    - Set `repo.owner` and `repo.name`
    - Set `scan.paths` to your source directories (e.g., `torchvision/**/*.py`)
    - Set `build_logs.workflow_name` to your CI workflow name
-   - Disable audits that aren't relevant (e.g., `template_compliance: false` for non-tutorial repos)
-   - Set `staleness.review_data_url` to your review data (or disable `staleness_check`)
+   - Disable audits that aren't relevant (e.g., `orphaned_tutorials: false` for non-tutorial repos)
 
 3. **Update the workflow fork guard:**
    - Change `if: github.repository == 'pytorch/tutorials'` to your repo name
@@ -115,10 +97,9 @@ scan:
   paths: ["torchvision/**/*.py", "references/**/*.py"]
   extensions: [".py"]
 audits:
-  staleness_check: false       # no review data
-  template_compliance: false   # not tutorials
-  index_consistency: false     # no index.rst
-  build_health: false          # different build system
+  build_log_warnings: true
+  changelog_diff: true
+  orphaned_tutorials: false
 ```
 
 **pytorch/examples:**
@@ -127,11 +108,9 @@ scan:
   paths: ["**/*.py"]
   extensions: [".py"]
 audits:
-  staleness_check: false
-  template_compliance: false
-  index_consistency: false
+  build_log_warnings: true
+  changelog_diff: true
   orphaned_tutorials: false
-  build_health: false
 ```
 
 ## How Config C Works
@@ -201,6 +180,6 @@ Each finding uses the `Finding` dataclass: `file`, `line`, `severity` (critical/
 | Timeline | Milestone |
 |----------|-----------|
 | Month 0–1 | Build and ship in `pytorch/tutorials` |
-| Month 2–3 | Stabilize, tune false-positive rates, validate trend tracking |
+| Month 2–3 | Stabilize, tune false-positive rates |
 | Month 3–4 | Extract to `pytorch/test-infra` as a reusable workflow (same pattern as `_claude-code.yml`) |
 | Month 4+ | Adopt in `pytorch/vision`, `pytorch/audio`, `pytorch/examples` via thin YAML shims |

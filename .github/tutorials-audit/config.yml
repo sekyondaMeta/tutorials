@@ -28,12 +28,6 @@ audits:
   build_log_warnings: true
   changelog_diff: true
   orphaned_tutorials: true
-  security_patterns: true
-  staleness_check: true
-  dependency_health: true
-  template_compliance: true
-  index_consistency: true
-  build_health: true
 
 # Build log warning extraction settings
 build_logs:
@@ -55,19 +49,9 @@ changelog:
     - "Backwards Incompatible"
   include_raw_text: true
 
-# Staleness check settings
-staleness:
-  review_data_url: "https://raw.githubusercontent.com/pytorch/tutorials/refs/heads/last-reviewed-data-json/tutorials-review-data.json"
-  warn_after_months: 6
-  critical_after_months: 12
-
 # Issue creation and lifecycle settings
 issue:
   label: "tutorials-audit"
   title_template: "Tutorials Audit Report — {date}"
   trigger_claude: true
   close_previous: true
-
-# Trend tracking settings
-trend_tracking:
-  enabled: true
