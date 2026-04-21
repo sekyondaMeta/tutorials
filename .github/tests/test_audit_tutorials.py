@@ -6,7 +6,6 @@ Run with: pytest .github/tests/test_audit_tutorials.py -v
 from __future__ import annotations
 
 import argparse
-import ast
 import os
 import sys
 import textwrap
@@ -213,57 +212,6 @@ class TestBuildSummary:
 
 
 # =========================================================================
-# compute_trends
-# =========================================================================
-
-
-class TestComputeTrends:
-    def test_no_previous(self):
-        summary = aud.AuditRunSummary(
-            "2026-04-02", 10, {"critical": 2, "warning": 8}, {}
-        )
-        trends = aud.compute_trends(None, summary)
-        assert trends["has_previous"] is False
-
-    def test_with_previous(self):
-        previous = {
-            "date": "2026-03-15",
-            "total_findings": 15,
-            "by_severity": {"critical": 5, "warning": 10},
-        }
-        current = aud.AuditRunSummary(
-            "2026-04-15", 10, {"critical": 2, "warning": 8}, {}
-        )
-        trends = aud.compute_trends(previous, current)
-
-        assert trends["has_previous"] is True
-        assert trends["previous_date"] == "2026-03-15"
-        assert trends["previous_total"] == 15
-        assert trends["total_delta"] == -5
-        assert trends["severity_deltas"]["critical"] == -3
-        assert trends["severity_deltas"]["warning"] == -2
-
-    def test_new_severity_category(self):
-        previous = {
-            "date": "2026-03-15",
-            "total_findings": 5,
-            "by_severity": {"warning": 5},
-        }
-        current = aud.AuditRunSummary(
-            "2026-04-15", 8, {"warning": 5, "critical": 3}, {}
-        )
-        trends = aud.compute_trends(previous, current)
-        assert trends["severity_deltas"]["critical"] == 3
-        assert trends["severity_deltas"]["warning"] == 0
-
-    def test_zero_previous_findings(self):
-        previous = {"date": "2026-03-15", "total_findings": 0, "by_severity": {}}
-        current = aud.AuditRunSummary("2026-04-15", 5, {"info": 5}, {})
-        trends = aud.compute_trends(previous, current)
-        assert trends["total_delta"] == 5
-
-
-# =========================================================================
 # generate_report
 # =========================================================================
 
@@ -272,7 +220,7 @@ class TestGenerateReport:
     def _make_config(self, trigger_claude=False):
         return {
             "repo": {"owner": "pytorch", "name": "tutorials"},
-            "audits": {"security_patterns": True},
+            "audits": {"build_log_warnings": True},
             "issue": {"trigger_claude": trigger_claude},
         }
 
@@ -289,7 +237,7 @@ class TestGenerateReport:
                 "a.py",
                 42,
                 "warning",
-                "security_patterns",
+                "build_log_warnings",
                 "torch.load issue",
                 "Add weights_only",
             ),
@@ -308,20 +256,6 @@ class TestGenerateReport:
         config = self._make_config(trigger_claude=False)
         report = aud.generate_report(config, [], "", {"has_previous": False})
         assert "@claude" not in report
-
-    def test_trends_section_present(self):
-        config = self._make_config()
-        trends = {
-            "has_previous": True,
-            "previous_date": "2026-03-15",
-            "previous_total": 20,
-            "total_delta": -5,
-            "severity_deltas": {"critical": -1, "warning": -4, "info": 0},
-        }
-        report = aud.generate_report(config, [], "", trends)
-        assert "Trend" in report
-        assert "2026-03-15" in report
-        assert "↓5" in report
 
     def test_trends_section_absent_when_no_previous(self):
         config = self._make_config()
@@ -356,343 +290,6 @@ class TestGenerateReport:
 
 
 # =========================================================================
-# _delta_str helper
-# =========================================================================
-
-
-class TestDeltaStr:
-    def test_positive(self):
-        assert aud._delta_str(5) == "↑5"
-
-    def test_negative(self):
-        assert aud._delta_str(-3) == "↓3"
-
-    def test_zero(self):
-        assert aud._delta_str(0) == "—"
-
-
-# =========================================================================
-# audit_security_patterns — synthetic inputs
-# =========================================================================
-
-
-class TestAuditSecurityPatterns:
-    def _write_py(self, tmp_path, filename, content):
-        f = tmp_path / filename
-        f.write_text(textwrap.dedent(content))
-        return str(f)
-
-    def test_torch_load_without_weights_only(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "test.py",
-            """\
-            import torch
-            model = torch.load("model.pt")
-        """,
-        )
-        config = {"scan": {}}
-        findings = aud.audit_security_patterns(config, [filepath])
-        assert any(
-            "torch.load" in f.message and "weights_only" in f.message for f in findings
-        )
-
-    def test_torch_load_with_weights_only(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "test.py",
-            """\
-            import torch
-            model = torch.load("model.pt", weights_only=True)
-        """,
-        )
-        config = {"scan": {}}
-        findings = aud.audit_security_patterns(config, [filepath])
-        torch_load_findings = [f for f in findings if "torch.load" in f.message]
-        assert len(torch_load_findings) == 0
-
-    def test_eval_detected(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "test.py",
-            """\
-            x = eval("1 + 2")
-        """,
-        )
-        config = {"scan": {}}
-        findings = aud.audit_security_patterns(config, [filepath])
-        assert any("eval" in f.message for f in findings)
-
-    def test_exec_detected(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "test.py",
-            """\
-            exec("print('hello')")
-        """,
-        )
-        config = {"scan": {}}
-        findings = aud.audit_security_patterns(config, [filepath])
-        assert any("exec" in f.message for f in findings)
-
-    def test_http_url_detected(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "test.py",
-            """\
-            url = "http://example.com/data.tar.gz"
-        """,
-        )
-        config = {"scan": {}}
-        findings = aud.audit_security_patterns(config, [filepath])
-        assert any("Non-HTTPS" in f.message for f in findings)
-
-    def test_localhost_http_not_flagged(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "test.py",
-            """\
-            url = "http://localhost:8080/api"
-        """,
-        )
-        config = {"scan": {}}
-        findings = aud.audit_security_patterns(config, [filepath])
-        http_findings = [f for f in findings if "Non-HTTPS" in f.message]
-        assert len(http_findings) == 0
-
-    def test_hardcoded_path_detected(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "test.py",
-            """\
-            path = "/home/user/data/model.pt"
-        """,
-        )
-        config = {"scan": {}}
-        findings = aud.audit_security_patterns(config, [filepath])
-        assert any("Hardcoded" in f.message for f in findings)
-
-    def test_clean_file_no_findings(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "test.py",
-            """\
-            import torch
-            model = torch.load("model.pt", weights_only=True)
-            x = torch.randn(3, 3)
-        """,
-        )
-        config = {"scan": {}}
-        findings = aud.audit_security_patterns(config, [filepath])
-        assert len(findings) == 0
-
-
-# =========================================================================
-# audit_template_compliance — synthetic inputs
-# =========================================================================
-
-
-class TestAuditTemplateCompliance:
-    def _write_py(self, tmp_path, filename, content):
-        f = tmp_path / filename
-        f.write_text(textwrap.dedent(content))
-        return str(f)
-
-    def test_missing_author(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "my_tutorial.py",
-            '''\
-            """
-            My Tutorial
-            ============
-
-            .. grid:: 2
-
-                .. grid-item-card:: What you will learn
-
-            """
-            # Conclusion
-            # ----------
-        ''',
-        )
-        findings = aud.audit_template_compliance({}, [filepath])
-        assert any("Author" in f.message for f in findings)
-
-    def test_missing_grid_cards(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "my_tutorial.py",
-            '''\
-            """
-            My Tutorial
-            ============
-
-            **Author:** `Test <https://example.com>`_
-            """
-            # Conclusion
-            # ----------
-        ''',
-        )
-        findings = aud.audit_template_compliance({}, [filepath])
-        assert any("grid" in f.message for f in findings)
-
-    def test_missing_conclusion(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "my_tutorial.py",
-            '''\
-            """
-            My Tutorial
-            ============
-
-            **Author:** `Test <https://example.com>`_
-
-            .. grid:: 2
-
-                .. grid-item-card:: What you will learn
-            """
-            x = 1
-        ''',
-        )
-        findings = aud.audit_template_compliance({}, [filepath])
-        assert any("Conclusion" in f.message for f in findings)
-
-    def test_filename_not_tutorial(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "my_example.py",
-            '''\
-            """
-            My Example
-            ==========
-            """
-        ''',
-        )
-        findings = aud.audit_template_compliance({}, [filepath])
-        assert any("_tutorial.py" in f.message for f in findings)
-
-    def test_compliant_tutorial_minimal_findings(self, tmp_path):
-        filepath = self._write_py(
-            tmp_path,
-            "my_tutorial.py",
-            '''\
-            """
-            My Tutorial
-            ============
-
-            **Author:** `Test <https://example.com>`_
-
-            .. grid:: 2
-
-                .. grid-item-card:: What you will learn
-
-            """
-
-            ######################################
-            # Conclusion
-            # ----------
-            # That's all.
-        ''',
-        )
-        findings = aud.audit_template_compliance({}, [filepath])
-        # Should have no findings for author, grid, conclusion, or filename
-        issue_types = {f.message for f in findings}
-        assert not any("Author" in m for m in issue_types)
-        assert not any("grid" in m for m in issue_types)
-        assert not any("Conclusion" in m for m in issue_types)
-        assert not any("_tutorial.py" in m for m in issue_types)
-
-
-# =========================================================================
-# audit_dependency_health — synthetic inputs
-# =========================================================================
-
-
-class TestAuditDependencyHealth:
-    def test_missing_dependency_flagged(self, tmp_path):
-        py_file = tmp_path / "tutorial.py"
-        py_file.write_text("import captum\n")
-        config = {"scan": {}}
-        findings = aud.audit_dependency_health(config, [str(py_file)])
-        # captum is not in the repo's requirements.txt (or we're running from tmp),
-        # so it should be flagged as a missing dependency
-        assert any("captum" in f.message for f in findings)
-
-    def test_stdlib_not_flagged(self, tmp_path):
-        py_file = tmp_path / "tutorial.py"
-        py_file.write_text("import os\nimport sys\nimport json\n")
-        config = {"scan": {}}
-        findings = aud.audit_dependency_health(config, [str(py_file)])
-        assert not any("os" in f.message for f in findings)
-        assert not any("sys" in f.message for f in findings)
-
-    def test_torch_not_flagged(self, tmp_path):
-        py_file = tmp_path / "tutorial.py"
-        py_file.write_text("import torch\nimport torchvision\n")
-        config = {"scan": {}}
-        findings = aud.audit_dependency_health(config, [str(py_file)])
-        assert not any(
-            "torch" in f.message and "not found" in f.message for f in findings
-        )
-
-
-# =========================================================================
-# _get_call_name and _is_torch_load helpers
-# =========================================================================
-
-
-class TestGetCallName:
-    def _parse_call(self, code):
-        tree = ast.parse(code)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Call):
-                return node
-        return None
-
-    def test_simple_function(self):
-        node = self._parse_call("foo()")
-        assert aud._get_call_name(node) == "foo"
-
-    def test_dotted_name(self):
-        node = self._parse_call("torch.load(x)")
-        assert aud._get_call_name(node) == "torch.load"
-
-    def test_deep_dotted_name(self):
-        node = self._parse_call("torch.cuda.amp.autocast()")
-        assert aud._get_call_name(node) == "torch.cuda.amp.autocast"
-
-    def test_method_on_result(self):
-        # foo().bar() — bar is an attr of a Call, not a Name
-        node = self._parse_call("foo().bar()")
-        assert aud._get_call_name(node) == ""
-
-
-class TestIsTorchLoad:
-    def test_torch_load(self):
-        assert aud._is_torch_load(None, "torch.load") is True
-
-    def test_bare_load(self):
-        assert aud._is_torch_load(None, "load") is False
-
-    def test_other_function(self):
-        assert aud._is_torch_load(None, "json.load") is False
-
-
-# =========================================================================
-# audit_build_health — synthetic inputs
-# =========================================================================
-
-
-class TestAuditBuildHealth:
-    def test_runs_without_error(self):
-        """Build health audit should run without crashing even from wrong cwd."""
-        config = {"scan": {}}
-        findings = aud.audit_build_health(config)
-        assert isinstance(findings, list)
-
-
-# =========================================================================
 # audit_orphaned_tutorials — smoke test
 # =========================================================================
 
@@ -719,15 +316,8 @@ class TestFullPipeline:
                 "build_log_warnings": False,
                 "changelog_diff": False,
                 "orphaned_tutorials": False,
-                "security_patterns": False,
-                "staleness_check": False,
-                "dependency_health": False,
-                "template_compliance": False,
-                "index_consistency": False,
-                "build_health": False,
             },
             "issue": {"trigger_claude": False},
-            "trend_tracking": {"enabled": False},
         }
 
         findings, raw_text = aud.run_audits(
@@ -736,21 +326,16 @@ class TestFullPipeline:
             argparse.Namespace(
                 skip_build_logs=True,
                 skip_changelog=True,
-                skip_staleness=True,
-                skip_security=True,
                 skip_orphans=True,
-                skip_dependencies=True,
-                skip_templates=True,
-                skip_index=True,
-                skip_build_health=True,
             ),
         )
         assert findings == []
         assert raw_text == ""
 
         summary = aud.build_summary(findings)
-        trends = aud.compute_trends(None, summary)
-        report = aud.generate_report(config, findings, raw_text, trends)
+        report = aud.generate_report(
+            config, findings, raw_text, {"has_previous": False}
+        )
 
         assert "# 📋 Tutorials Audit Report" in report
         assert "test/repo" in report
